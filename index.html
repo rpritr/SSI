@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strežniški sistemi — teorija</title>
+<style>
+  :root {
+    --navy:#0e1a24; --teal:#1b6b63; --paper:#f3efe6; --ink:#1a242c;
+    --muted:#5c6b73; --card:#fffcf8; --line:#d9d1c3; --soft:#e7f2f0;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#081016; color:var(--ink);
+    font-family:Arial, Helvetica, sans-serif; }
+  .progress { position:fixed; left:0; top:0; height:4px; background:var(--teal); z-index:3; }
+  .slide { display:none; height:100%; padding:3.2vh 5vw 2vh; position:relative; overflow:hidden; }
+  .slide.active { display:flex; flex-direction:column; }
+  .slide.paper { background:var(--paper); }
+  .slide.paper::before { content:""; position:absolute; left:0; right:0; top:0; height:8px; background:var(--teal); }
+  .slide.navy { background:var(--navy); color:#fff; padding-left:8vw; }
+  .slide.navy::before { content:""; position:absolute; left:0; top:0; bottom:0; width:10px; background:var(--teal); }
+  .kicker { margin:0; color:var(--teal); font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; font-size:clamp(14px,1.4vw,18px); }
+  h1 { margin:.2em 0 .35em; font-size:clamp(34px,3.8vw,52px); line-height:1.12; color:var(--navy); max-width:18em; }
+  .navy h1 { color:#fff; font-size:clamp(48px,5.6vw,80px); max-width:12em; }
+  .lead { font-size:clamp(22px,2.3vw,32px); line-height:1.35; color:#d5e4e1; max-width:16em; }
+  .who { margin-top:8vh; font-size:clamp(18px,1.8vw,26px); }
+  .body { flex:1; min-height:0; overflow:auto; padding-bottom:1vh; }
+  ul { margin:.2em 0 0; padding:0; list-style:none; font-size:clamp(20px,2.1vw,30px); line-height:1.35; }
+  li { margin:.38em 0 .38em 0; padding-left:1.15em; position:relative; }
+  li::before { content:"▸"; position:absolute; left:0; color:var(--teal); }
+  .card h2, .toc-col h2 { color:var(--teal); }
+  blockquote { margin:0 0 1em; background:var(--card); border-left:6px solid var(--teal);
+    padding:1em 1.2em; font-size:clamp(20px,2vw,28px); line-height:1.35; color:var(--navy); }
+  table { width:100%; border-collapse:collapse; font-size:clamp(18px,1.7vw,24px); background:var(--card); }
+  th { background:var(--navy); color:#fff; text-align:left; padding:.5em .65em; font-weight:700; }
+  td { padding:.42em .65em; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:nth-child(even) td { background:#f7f4ee; }
+  td.mono { font-family:"Courier New", Courier, monospace; font-size:.92em; }
+  .cards { display:grid; grid-template-columns:repeat(var(--cols), minmax(0,1fr)); gap:12px; }
+  .card { background:var(--card); border-left:6px solid var(--teal); padding:.75em .9em 1em; min-height:0; }
+  .card h2 { margin:.15em 0 .35em; font-size:clamp(18px,1.7vw,26px); color:var(--navy); }
+  .card p, .toc-col p { margin:0; font-size:clamp(16px,1.5vw,22px); line-height:1.35; }
+  .card b { color:var(--teal); font-size:1.15em; }
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .split .card h2 { color:var(--teal); }
+  .toc-col { display:grid; gap:.2em; align-content:start; }
+  .body:has(.toc-col) { display:grid; grid-template-columns:1fr 1fr; gap:3vw; }
+  .toc-col b { color:var(--teal); font-size:15px; }
+  .toc-col h2 { margin:0; font-size:clamp(18px,1.6vw,24px); color:var(--navy); }
+  .toc-col p { color:var(--muted); }
+  pre { margin:0; background:var(--navy); color:var(--soft); padding:.75em 1em;
+    font-family:"Courier New", Courier, monospace; font-size:clamp(18px,1.7vw,26px);
+    line-height:1.35; overflow:auto; white-space:pre-wrap; }
+  .note { color:var(--muted); font-style:italic; font-size:clamp(16px,1.4vw,22px); }
+  footer { display:flex; justify-content:space-between; color:var(--muted);
+    font-size:16px; padding-top:.6em; }
+  .navy footer { color:#c5d4d1; }
+  .controls { position:fixed; left:50%; bottom:12px; transform:translateX(-50%);
+    display:flex; gap:8px; z-index:4; }
+  button { background:var(--teal); color:#fff; border:0; border-radius:999px; padding:.45em .85em;
+    font:inherit; font-size:14px; cursor:pointer; }
+  button:hover { background:var(--teal); }
+  @media (max-width: 800px) {
+    .cards, .split { grid-template-columns:1fr; }
+    h1 { font-size:28px; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<section class="slide navy title">
+          <p class="kicker">Višješolski predmet</p>
+          <h1>Strežniški sistemi</h1>
+          <p class="lead">Teorija, zložena v module.<br>Od programske opreme do storitve v oblaku.</p>
+          <p class="who"><strong>Robi Pritržnik</strong><br>MSc CS · CISO · CEH · MBA</p>
+        </section><section class="slide paper">
+      <p class="kicker">Vsebina</p>
+      <h1>Kako je snov razdeljena</h1>
+      <div class="body"><div class="toc-col"><article><b>01</b><h2>Predmet</h2><p>Štirje zagovori, projekt 60 %</p></article><article><b>02</b><h2>Programska oprema</h2><p>Plasti sistema, vrste, licence</p></article><article><b>03</b><h2>Operacijski sistem</h2><p>Viri, procesi, datoteke</p></article><article><b>04</b><h2>Linux</h2><p>Imeniki, pravice, uporabniki</p></article><article><b>05</b><h2>Ukazna lupina</h2><p>Ukazi, skripte, preusmeritve</p></article><article><b>06</b><h2>Procesi</h2><p>Stanja, signali, prednost</p></article></div><div class="toc-col"><article><b>07</b><h2>Administracija</h2><p>Življenje sistema v času</p></article><article><b>08</b><h2>Nameščanje</h2><p>Paketi, repozitoriji, kontejnerji</p></article><article><b>09</b><h2>Storitve</h2><p>Splet, DNS, pošta, SSH</p></article><article><b>10</b><h2>Gostovanje</h2><p>Modeli, virtualizacija, plošče</p></article><article><b>11</b><h2>Splet in vsebine</h2><p>Generacije spleta, CMS</p></article><article><b>12</b><h2>Sklep</h2><p>Kaj mora znati razložiti študent</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>2 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 01</p>
+          <h1>Predmet</h1>
+          <p class="lead">Kaj predmet zahteva in kako se znanje pokaže.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>3 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">01  ·  Predmet</p>
+      <h1>Trije splošni cilji</h1>
+      <div class="body"><ul><li>Kritično, analitično in sintetično razmišljanje o sistemih, ne le poznavanje ukazov.</li><li>Odgovornost za načrtno delo: sprememba gre najprej v test, šele nato v produkcijo.</li><li>Sprotno spremljanje novosti v sistemskem inženirstvu in administraciji.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>4 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">01  ·  Predmet</p>
+      <h1>Kompetence</h1>
+      <div class="body"><ul><li>Namestiti in nastaviti strežniško sistemsko programsko opremo.</li><li>Namestiti in nastaviti strežniške vloge.</li><li>Upravljati sistemsko programsko opremo skozi njen življenjski cikel.</li><li>Zagotavljati strežniške storitve, tudi v oblaku.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>5 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">01  ·  Predmet</p>
+      <h1>Obveznosti in ocena</h1>
+      <div class="body"><table><thead><tr><th>Postavka</th><th>Obseg</th></tr></thead><tbody><tr><td>Kontaktne ure</td><td>84 ur: 36 predavanj in 48 vaj</td></tr><tr><td>Samostojno delo</td><td>96 ur: literatura, vaje, projekt</td></tr><tr><td>Kreditne točke</td><td>6 KT</td></tr><tr><td>Vaje</td><td>Osem vaj</td></tr><tr><td>Zagovori</td><td>Štirje. Vsak pokriva dve vaji. Skupaj 40 % ocene.</td></tr><tr><td>Projekt</td><td>60 % ocene, z zagovorom naloge</td></tr></tbody></table><p class="note">Pisnega izpita ni. Štirideset odstotkov dajo štirje zagovori vaj, šestdeset odstotkov projekt.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>6 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">01  ·  Predmet</p>
+      <h1>Projektna naloga</h1>
+      <div class="body"><ul><li>Naslovnica in kazalo.</li><li>Teoretično ozadje teme, 2 do 3 strani.</li><li>Problem, ki ga naloga rešuje, približno 1 stran.</li><li>Raziskava, analiza ali primerjava, 3 do 5 strani.</li><li>Zaključek z ugotovitvami in seznam virov.</li><li>Vsebine najmanj za 6 strani A4; skupaj s slikami najmanj 12 strani.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>7 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 02</p>
+          <h1>Programska oprema</h1>
+          <p class="lead">Kaj na računalniku sploh teče in pod kakšnimi pogoji.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>8 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Program je zapis postopka</h1>
+      <div class="body"><blockquote>Programska oprema je skupek programov, ki skupaj s strojno opremo tvori delujoč računalnik. Sama nima teže in oblike; izvaja se, ko je naložena v pomnilnik.</blockquote><ul><li>Strojna oprema daje vire: procesor, pomnilnik, disk, omrežje.</li><li>Program pove, kako te vire porabiti za določen namen.</li><li>Brez operacijskega sistema bi vsak program moral sam govoriti s strojno opremo.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>9 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Štiri plasti računalniškega sistema</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>Uporabniki</h2><p>Ljudje, drugi programi ali drugi računalniki, ki nekaj zahtevajo.</p></article><article class="card"><h2>Uporabniški programi</h2><p>Rešujejo nalogo uporabnika: brskalnik, baza, spletna trgovina.</p></article><article class="card"><h2>Operacijski sistem</h2><p>Deli vire in skriva podrobnosti strojne opreme.</p></article><article class="card"><h2>Strojna oprema</h2><p>Procesor, pomnilnik, disk in vhodno-izhodne naprave.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>10 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Dve družini programske opreme</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Sistemska</h2><ul><li>Omogoča, da drugi programi sploh lahko tečejo.</li><li>Operacijski sistem.</li><li>Gonilniki, lupine, orodja za razvoj.</li><li>Servisni programi za disk, omrežje, uporabnike in dnevnike.</li></ul></article><article class="card"><h2>Uporabniška</h2><ul><li>Rešuje konkretno nalogo končnega uporabnika.</li><li>Urejevalnik besedil, poštni odjemalec, ERP.</li><li>Na strežniku je to pogosto spletna aplikacija.</li><li>Stoji na sistemski opremi in je od nje odvisna.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>11 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Kaj počne sistemska programska oprema</h1>
+      <div class="body"><ul><li>Upravlja datoteke in imenike.</li><li>Pove, v kakšnem stanju je sistem: čas, pomnilnik, prijavljeni uporabniki.</li><li>Podpira jezike: prevajalniki, zbirniki, interpreterji.</li><li>Nalaga programe in jih izvaja.</li><li>Omogoča komunikacijo med procesi, uporabniki in računalniki.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>12 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Šest skupin sistemske opreme</h1>
+      <div class="body"><div class="cards" style="--cols:3"><article class="card"><h2>Operacijski sistemi</h2><p>Jedro, lupina, gonilniki, zagonski nalagalnik.</p></article><article class="card"><h2>Razvojna orodja</h2><p>Urejevalnik, prevajalnik, povezovalnik, razhroščevalnik, knjižnice.</p></article><article class="card"><h2>Virtualizacija</h2><p>Navidezni stroji, diski, omrežja in izvajalna okolja.</p></article><article class="card"><h2>Komunikacija</h2><p>Požarni zid, posredniški strežnik, DNS, DHCP, VPN, certifikati.</p></article><article class="card"><h2>Administracija</h2><p>Uporabniki, paketi, čas, varnost, revizija, nadzor.</p></article><article class="card"><h2>Vsebine</h2><p>Orodja, s katerimi urednik objavlja, ne da bi menjal strežnik.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>13 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Licence povedo, kaj smeš</h1>
+      <div class="body"><table><thead><tr><th>Model</th><th>Bistvo</th><th>Izvorna koda</th></tr></thead><tbody><tr><td>Freeware</td><td>Uporaba je brezplačna, avtor obdrži pravice.</td><td>Običajno zaprta</td></tr><tr><td>Shareware</td><td>Preizkus, nato plačilo, če program obdržiš.</td><td>Običajno zaprta</td></tr><tr><td>Javna last</td><td>Avtor se pravicam odreče.</td><td>Ni pogojev</td></tr><tr><td>Lastniška</td><td>Pogodba: osebna, mala firma ali podjetje.</td><td>Zaprta</td></tr><tr><td>Odprta koda</td><td>Kodo smeš brati, spreminjati in deliti pod pogoji licence.</td><td>Odprta</td></tr></tbody></table><p class="note">Cena in licenca nista isto. Odprta koda je lahko plačljiva kot storitev, freeware pa je lahko povsem zaprt.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>14 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Štiri licence, ki jih srečamo na strežniku</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>GPL</h2><p>Copyleft. Izpeljanka, ki jo razširjaš, ostane pod isto licenco.</p></article><article class="card"><h2>MIT in BSD</h2><p>Kratki dovoljenji. Kodo smeš vgraditi tudi v lastniški izdelek.</p></article><article class="card"><h2>Apache 2.0</h2><p>Dovoljenje z izrecno ureditvijo patentov. Pogosto pri strežniški programski opremi.</p></article><article class="card"><h2>Lastniška</h2><p>Pogoji se za isto programsko opremo razlikujejo med osebo, malo in veliko organizacijo.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>15 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">02  ·  Programska oprema</p>
+      <h1>Kako je nastal večuporabniški sistem</h1>
+      <div class="body"><div class="cards steps" style="--cols:4"><article class="card"><b>01</b><h2>Konzola</h2><p>En računalnik, en operater. Program se je nalagal ročno, napake so se brale iz registrov.</p></article><article class="card"><b>02</b><h2>Paketna obdelava</h2><p>Čitalci kartic, trakovi in tiskalniki. Naloge čakajo v vrsti, računalnik ne stoji med dvema programerjema.</p></article><article class="card"><b>03</b><h2>Orodja</h2><p>Zbirnik, nalagalnik, povezovalnik, knjižnice in gonilniki ločijo program od naprave.</p></article><article class="card"><b>04</b><h2>Delitev časa</h2><p>Več uporabnikov hkrati. Operacijski sistem menjava programe tako hitro, da se zdi, da tečejo skupaj.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>16 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 03</p>
+          <h1>Operacijski sistem</h1>
+          <p class="lead">Kdo dodeljuje procesor, pomnilnik in naprave.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>17 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>OS je upravitelj virov</h1>
+      <div class="body"><blockquote>Operacijski sistem nadzira strojno opremo, dodeljuje vire programom in uporabnikom ter poskrbi, da se programi med seboj ne podrejo.</blockquote><ul><li>Deli procesor, pomnilnik in naprave.</li><li>Rešuje spore, ko dva procesa hočeta isti vir.</li><li>Skrbi, da je strojna oprema izkoriščena, uporabnik pa vidi stabilen vmesnik.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>18 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Naloge operacijskega sistema</h1>
+      <div class="body"><ul><li>Dodeljevanje procesorja, pomnilnika in vhodno-izhodnih naprav.</li><li>Časovno razporejanje opravil.</li><li>Zaščita pred sočasnim dostopom do istega vira.</li><li>Obračunavanje porabe in nadzor, da vir ne uide iz rok.</li><li>Vmesnik, prek katerega uporabnik in program sploh prideta do storitev.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>19 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Pet delov, ki jih vidimo ob zagonu</h1>
+      <div class="body"><div class="cards" style="--cols:5"><article class="card"><h2>Nalagalnik</h2><p>Najde jedro na disku in ga naloži v pomnilnik.</p></article><article class="card"><h2>Jedro</h2><p>Edini del, ki neposredno upravlja vire in prekinitve.</p></article><article class="card"><h2>Gonilniki</h2><p>Prevajajo zahteve jedra v govorico konkretne naprave.</p></article><article class="card"><h2>Lupina</h2><p>Ukazna ali grafična. Uporabnikov vhod v storitve jedra.</p></article><article class="card"><h2>Datotečni sistem</h2><p>Trajen zapis podatkov, tudi ko se proces konča.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>20 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Jedro odgovarja na štiri vrste dela</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>Procesi</h2><p>Ustvarja, zaustavlja in menjava programe, ki se izvajajo.</p></article><article class="card"><h2>Viri</h2><p>Deli pomnilnik, disk in naprave med tiste, ki jih potrebujejo.</p></article><article class="card"><h2>Varnost</h2><p>Ločuje uporabnike in procese. Eden ne bere pomnilnika drugega.</p></article><article class="card"><h2>Prekinitve</h2><p>Naprava ali ura zahteva pozornost. Jedro prekine tekoče delo in postreže.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>21 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Lupina in uporabniški vmesnik</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Ukazna vrstica</h2><ul><li>Besedilo noter, besedilo ven.</li><li>Ukaze je mogoče zapisati v skripto in ponoviti.</li><li>Na strežniku je to osnovni vmesnik skrbnika.</li><li>Primeri: bash, zsh, PowerShell.</li></ul></article><article class="card"><h2>Grafični vmesnik</h2><ul><li>Okna, meniji, ikone.</li><li>Okenski upravitelj razporeja okna.</li><li>Datotečni upravitelj je vmesnik do datotečnega sistema.</li><li>Na strežniku ga pogosto ni. Delo poteka na daljavo, prek lupine.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>22 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Vrste operacijskih sistemov</h1>
+      <div class="body"><table><thead><tr><th>Vrsta</th><th>Pomeni</th></tr></thead><tbody><tr><td>Enouporabniški / večuporabniški</td><td>Ali sistem ločuje več hkratnih uporabnikov in njihove pravice.</td></tr><tr><td>Enoopravilni / večopravilni</td><td>Ali lahko čaka več programov, ki si delijo procesor.</td></tr><tr><td>Večnitni</td><td>En program je razbit na niti, ki si delijo pomnilnik procesa.</td></tr><tr><td>Interaktivni</td><td>Odziv v času, ki ga človek dojame kot takojšnjega.</td></tr><tr><td>Omrežni in porazdeljeni</td><td>Viri in opravila segajo čez več računalnikov.</td></tr><tr><td>Realnočasovni</td><td>Zamuda ima zgornjo mejo. Pomembno v industriji in vgrajenih sistemih.</td></tr><tr><td>Vgrajeni</td><td>Sistem je del naprave in opravlja ozko nalogo.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>23 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Proces je program v teku</h1>
+      <div class="body"><blockquote>Proces je izvajajoči se program. Program na disku je zapis postopka. Proces je njegovo izvajanje: ima stanje, prednost, programski števec in lastne registre.</blockquote><ul><li>Dva zagona istega programa sta dva procesa.</li><li>Operacijski sistem vsakemu vodi evidenco v procesni tabeli.</li><li>Ko se proces konča, njegov pomnilnik sprosti. Datoteke ostanejo.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>24 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Pet stanj procesa</h1>
+      <div class="body"><div class="cards steps" style="--cols:5"><article class="card"><b>01</b><h2>Nov</h2><p>Proces je ustvarjen, a še ni sprejet v boj za procesor.</p></article><article class="card"><b>02</b><h2>Pripravljen</h2><p>Ima vse, kar potrebuje, in čaka na rezino časa.</p></article><article class="card"><b>03</b><h2>Tekoč</h2><p>Procesor v tem trenutku izvaja njegove ukaze.</p></article><article class="card"><b>04</b><h2>Čakajoč</h2><p>Stoji na dogodku: disk, omrežje, tipkovnica, zaklep.</p></article><article class="card"><b>05</b><h2>Končan</h2><p>Delo je opravljeno ali prekinjeno. Evidenca se počisti.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>25 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Eno jedro in več jeder</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Eno jedro</h2><ul><li>V danem trenutku teče en proces.</li><li>Razporejevalnik ga čez nekaj milisekund zamenja.</li><li>Vzporednost je navidezna. Človek vidi hkratnost, procesor pa menjava.</li><li>Čakanje na disk je priložnost, da teče nekdo drug.</li></ul></article><article class="card"><h2>Več jeder</h2><ul><li>Več procesov lahko res teče v istem trenutku.</li><li>Vsako jedro ima svoj tekoči proces.</li><li>Razporejevalnik še vedno menjava, ker je procesov več kot jeder.</li><li>Program, ki ni razbit na niti, enega jedra ne preseže.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>26 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Razporejevalnik tehta tri cilje</h1>
+      <div class="body"><ul><li>Odzivnost: interaktivni proces naj ne čaka predolgo.</li><li>Prepustnost: v uri naj se konča čim več dela.</li><li>Pravičnost: en proces naj ne izstrada ostalih.</li><li>Na splošnonamenskem sistemu je razporejanje preventiva. Jedro lahko procesor vzame tudi sredi dela.</li><li>V realnem času je drugače: pomembnejša je zgornja meja zakasnitve kot povprečna hitrost.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>27 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Datotečni sistem preživi proces</h1>
+      <div class="body"><blockquote>Datotečni sistem je del operacijskega sistema, ki hrani podatke tudi potem, ko se program konča. Podatke združi v datoteke, jim da imena in jih razvrsti v drevo imenikov.</blockquote><ul><li>Ime datoteke je pogodba med človekom in sistemom. Pravila se med sistemi razlikujejo.</li><li>Imenik je posebna datoteka, ki vsebuje seznam imen.</li><li>Pot od korena do datoteke je naslov. Brez hierarhije bi bila imena en sam raven seznam.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>28 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">03  ·  Operacijski sistem</p>
+      <h1>Datotečni sistemi, ki jih velja prepoznati</h1>
+      <div class="body"><table><thead><tr><th>Sistem</th><th>Kje</th><th>Zakaj ga poznamo</th></tr></thead><tbody><tr><td>ext4</td><td>Linux</td><td>Privzeta izbira na večini strežniških distribucij. Dnevnik ščiti pred polovičnim zapisom.</td></tr><tr><td>XFS, Btrfs</td><td>Linux</td><td>Veliki diski, posnetki in naprednejše upravljanje prostornin.</td></tr><tr><td>NTFS</td><td>Windows</td><td>Pravice, dnevnik, velike datoteke. Strežniški Windows živi na njem.</td></tr><tr><td>FAT32</td><td>Izmenjava</td><td>Preprost in široko berljiv. Slab za pravice in velike datoteke.</td></tr><tr><td>APFS</td><td>macOS</td><td>Posnetki in šifriranje. Na strežniku Linux ga ne uporabljamo.</td></tr></tbody></table><p class="note">Izbira datotečnega sistema je odločitev ob formatiranju. Kasneje je menjava draga, ker pomeni prenos podatkov.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>29 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 04</p>
+          <h1>Linux</h1>
+          <p class="lead">Drevo imenikov, pravice in identiteta uporabnika.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>30 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Zakaj je Linux privzeti strežniški sistem</h1>
+      <div class="body"><ul><li>Skrbnik dela v lupini, tudi ko pred seboj nima zaslona strežnika.</li><li>Paketni sistem namesti program skupaj z odvisnostmi.</li><li>Enak model pravic in procesov teče od majhnega VPS do gruče.</li><li>Odprta koda pomeni, da je vedenje sistema mogoče prebrati in preveriti.</li><li>Na strežnikih ostajamo na izdajah z dolgo podporo (LTS), ne na vsaki novi različici.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>31 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Drevo imenikov ima stalne vloge</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Programi in zagon</h2><ul><li>/bin in /sbin: ukazi uporabnika in skrbnika.</li><li>/usr: programi, ki niso nujni za prvi zagon.</li><li>/lib: knjižnice v skupni rabi.</li><li>/boot: jedro in zagonski nalagalnik.</li><li>/etc: konfiguracija sistema in storitev.</li></ul></article><article class="card"><h2>Podatki in pogled v jedro</h2><ul><li>/home in /root: domači imeniki.</li><li>/var: dnevniki, vrste, spletne strani, baze.</li><li>/srv: podatki, ki jih servira storitev.</li><li>/tmp: začasne datoteke.</li><li>/dev, /proc, /sys: naprave in navidezni pogled v jedro.</li><li>/mnt in /media: priklop drugih datotečnih sistemov.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>32 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Na sodobnem Ubuntuju so poti spojene</h1>
+      <div class="body"><blockquote>Standard FHS še vedno opisuje vloge imenikov. Na trenutnih distribucijah pa so /bin, /sbin in /lib pogosto le povezave na iste imenike pod /usr. Ukaz ls živi v /usr/bin, pot /bin/ls pa še vedno deluje.</blockquote><ul><li>/usr/local je rezerviran za programe, ki jih skrbnik prevede sam.</li><li>/opt je običajen prostor za programske opreme tretjih, ki pridejo v enem kosu.</li><li>Vloga imenika je pomembnejša od tega, ali je na disku svoja mapa ali povezava.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>33 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Dve vrsti poti</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Absolutna</h2><ul><li>Začne se s poševnico.</li><li>Opisuje celo pot od korena.</li><li>Primer: /home/ana/porocilo.txt</li><li>Deluje enako, ne glede na to, kje v drevesu trenutno stojiš.</li><li>V skriptah in cronu je prava izbira.</li></ul></article><article class="card"><h2>Relativna</h2><ul><li>Ne začne se s poševnico.</li><li>Merjena je od trenutnega imenika.</li><li>Primer: porocilo.txt ali ../skupno/a.txt</li><li>Krajša pri ročnem delu.</li><li>V skripti je nevarna, ker je trenutni imenik odvisen od zagona.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>34 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Vsaka datoteka ima tri občinstva</h1>
+      <div class="body"><div class="cards" style="--cols:3"><article class="card"><h2>Lastnik (u)</h2><p>Uporabnik, ki datoteko ima. Običajno tisti, ki jo je ustvaril.</p></article><article class="card"><h2>Skupina (g)</h2><p>Uporabniki, ki so v skupini, zapisani ob datoteki.</p></article><article class="card"><h2>Ostali (o)</h2><p>Vsi, ki niso ne lastnik ne v tej skupini. Na strežniku je to najstrožja vrstica.</p></article></div><p class="note">Pred pravicami stoji tip: - navadna datoteka, d imenik, l simbolna povezava.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>35 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Isti znak pomeni pri datoteki in imeniku drugo</h1>
+      <div class="body"><table><thead><tr><th>Pravica</th><th>Datoteka</th><th>Imenik</th></tr></thead><tbody><tr><td>r</td><td>Branje vsebine.</td><td>Izpis imen v imeniku.</td></tr><tr><td>w</td><td>Spreminjanje vsebine.</td><td>Dodajanje in brisanje imen v imeniku.</td></tr><tr><td>x</td><td>Zagon kot programa.</td><td>Vstop v imenik in prehod skozenj.</td></tr></tbody></table><p class="note">Imenik brez x je mogoče prebrati le delno: imena vidiš, do datotek pa ne prideš. Zato imajo imeniki pogosto 755, datoteke pa 644.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>36 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Oktalni zapis je vsota treh bitov</h1>
+      <div class="body"><table><thead><tr><th>Števka</th><th>Dvojiško</th><th>Pravice</th><th>Vsota</th></tr></thead><tbody><tr><td>0</td><td>000</td><td>---</td><td>nič</td></tr><tr><td>1</td><td>001</td><td>--x</td><td>izvajanje</td></tr><tr><td>2</td><td>010</td><td>-w-</td><td>pisanje</td></tr><tr><td>3</td><td>011</td><td>-wx</td><td>2 + 1</td></tr><tr><td>4</td><td>100</td><td>r--</td><td>branje</td></tr><tr><td>5</td><td>101</td><td>r-x</td><td>4 + 1</td></tr><tr><td>6</td><td>110</td><td>rw-</td><td>4 + 2</td></tr><tr><td>7</td><td>111</td><td>rwx</td><td>4 + 2 + 1</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>37 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Tri števke, tri občinstva</h1>
+      <div class="body"><blockquote>chmod 644 porocilo.txt pomeni rw- za lastnika ter r-- za skupino in ostale. Prva števka je lastnik, druga skupina, tretja ostali.</blockquote><ul><li>755 je običajen imenik ali izvedljiv program: rwxr-xr-x.</li><li>700 je zasebno: bere, piše in izvaja samo lastnik.</li><li>Simbolično isto zapišemo kot chmod u+x skripta.sh ali chmod o-r skrivnost.txt.</li><li>Pravice spreminja lastnik. Skrbnik jih spremeni prek sudo, ne tako, da bi delal kar kot root brez razloga.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>38 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Kaj pomeni vrstica ukaza ls -l</h1>
+      <div class="body"><table><thead><tr><th>Polje</th><th>Pomen</th></tr></thead><tbody><tr><td class="mono">-rw-r--r--</td><td>Tip in pravice. minus je datoteka, d imenik, l povezava.</td></tr><tr><td class="mono">1</td><td>Število povezav na to datoteko.</td></tr><tr><td class="mono">ana</td><td>Lastnik.</td></tr><tr><td class="mono">studenti</td><td>Skupina.</td></tr><tr><td class="mono">4096</td><td>Velikost v bajtih.</td></tr><tr><td class="mono">okt 2 18:00</td><td>Čas zadnje spremembe.</td></tr><tr><td class="mono">porocilo.txt</td><td>Ime.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>39 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Isti chmod, dva zapisa</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Učinek</th></tr></thead><tbody><tr><td class="mono">chmod 644 porocilo.txt</td><td>rw-r--r--. Berejo vsi, piše lastnik.</td></tr><tr><td class="mono">chmod 755 mapa</td><td>rwxr-xr-x. Običajen imenik ali program.</td></tr><tr><td class="mono">chmod 700 skrivnost.txt</td><td>rwx------. Samo lastnik.</td></tr><tr><td class="mono">chmod u+x skripta.sh</td><td>Lastniku doda izvajanje, ostalo pusti.</td></tr><tr><td class="mono">chmod u-r porocilo.txt</td><td>Lastniku vzame branje.</td></tr><tr><td class="mono">chmod o-r porocilo.txt</td><td>Ostalim vzame branje.</td></tr></tbody></table><p class="note">Prva števka je lastnik, druga skupina, tretja ostali. 4 je branje, 2 pisanje, 1 izvajanje.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>40 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Bližnjice v terminalu</h1>
+      <div class="body"><table><thead><tr><th>Tipke</th><th>Naredijo</th></tr></thead><tbody><tr><td class="mono">Ctrl+A / Ctrl+E</td><td>Na začetek oziroma konec vrstice.</td></tr><tr><td class="mono">Ctrl+L</td><td>Počisti zaslon. Isto kot clear.</td></tr><tr><td class="mono">Ctrl+R</td><td>Iskanje po prejšnjih ukazih.</td></tr><tr><td class="mono">Ctrl+C</td><td>Prekine tekoči ukaz.</td></tr><tr><td class="mono">Ctrl+D</td><td>Konča lupino, ko je vrstica prazna.</td></tr><tr><td class="mono">Ctrl+W / Ctrl+K</td><td>Zbriše besedo pred kazalcem oziroma ostanek vrstice.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>41 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Polja v /etc/passwd in /etc/group</h1>
+      <div class="body"><table><thead><tr><th>Datoteka</th><th>Polja, ločena z dvopičjem</th></tr></thead><tbody><tr><td class="mono">/etc/passwd</td><td>ime : x : UID : GID : polno ime : dom : lupina</td></tr><tr><td class="mono">/etc/shadow</td><td>geslo, ki ga bere samo root</td></tr><tr><td class="mono">/etc/group</td><td>ime : x : GID : člani, ločeni z vejico</td></tr></tbody></table><p class="note">Znak x v drugem polju pomeni, da geslo ni zapisano v tej datoteki.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>42 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Uporabnik je številka</h1>
+      <div class="body"><ul><li>Jedro pozna uporabnika kot UID, 32-bitno število. Ime je le oznaka za ljudi.</li><li>/etc/passwd našteje račune: ime, UID, GID, polno ime, domači imenik, lupina.</li><li>Polje gesla je x. Gesla so v /etc/shadow, ki jo bere samo root.</li><li>/etc/group našteje skupine in kdo je v njih.</li><li>Primarna skupina nastane z računom. Dodatne skupine dodajamo posebej, da starih ne zbrišemo.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>43 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>root in sudo</h1>
+      <div class="body"><div class="split"><article class="card"><h2>root</h2><ul><li>UID 0. Nima vsebinskih omejitev pravic.</li><li>Na Windows mu približno ustreza Administrator.</li><li>Neposredno delo kot root pušča slabo sled in eno samo geslo, ki odpre vse.</li><li>Račun root je na strežniku orodje za izjemo, ne za vsakdanjo prijavo.</li></ul></article><article class="card"><h2>sudo</h2><ul><li>Zažene en ukaz s pravicami drugega uporabnika, običajno roota.</li><li>Kdo sme kaj, piše v sudoers.</li><li>Vsak zagon se lahko zapiše. Vidi se, kdo je spremenil sistem.</li><li>Načelo: pravica za ukaz, ne deljeno geslo roota.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>44 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">04  ·  Linux</p>
+      <h1>Lupine, ki jih velja prepoznati</h1>
+      <div class="body"><table><thead><tr><th>Lupina</th><th>Kje</th><th>Opomba</th></tr></thead><tbody><tr><td>sh</td><td>Unix</td><td>Bourneova lupina. Majhna osnova, na katero se sklicujejo prenosljive skripte.</td></tr><tr><td>bash</td><td>Linux</td><td>Privzeta lupina na večini strežnikov. Zgodovina, bližnjice, skriptni jezik.</td></tr><tr><td>zsh</td><td>macOS, napredni uporabniki</td><td>Združljiva z bash, močnejše dokončevanje.</td></tr><tr><td>PowerShell</td><td>Windows in več platform</td><td>Lupina, v kateri so izhodi objekti, ne le besedilo.</td></tr></tbody></table><p class="note">Če lupina nima svojega jezika z pogoji in zankami, je le ukazna vrstica, ne okolje za skripte.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>45 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 05</p>
+          <h1>Ukazna lupina</h1>
+          <p class="lead">Kako skrbnik zapiše postopek tako, da ga sistem ponovi.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>46 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Lupina je dva programa v enem</h1>
+      <div class="body"><blockquote>Lupina je vmesnik do jedra in hkrati interpreter. Ukaz, ki ga vpišeš, in ukaz v datoteki sta za bash isto delo.</blockquote><ul><li>Skripta je datoteka z zaporedjem ukazov.</li><li>Z njo avtomatiziramo ponovljivo opravilo: varnostno kopijo, preverjanje, poročilo.</li><li>bash je na Linuxu privzeta izbira. Za prenosljivost se skripte pogosto začnejo z bolj koščeno lupino sh.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>47 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Shebang pove, kdo bere datoteko</h1>
+      <div class="body"><ul><li>Prva vrstica #!/bin/bash pomeni: to datoteko naj izvaja bash.</li><li>#!/bin/sh zahteva lupino, združljivo z Bourneovo.</li><li>#!/usr/bin/env python3 poišče Python v poti. Isto se uporablja za druge interpreterje.</li><li>Zagon je dvojen: bash skripta.sh, ali chmod u+x in ./skripta.sh.</li><li>Vrstica, ki se začne z #, je komentar. Shebang je komentar, ki ga jedro prebere pred zagonom.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>48 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Kam gre besedilo</h1>
+      <div class="body"><table><thead><tr><th>Zapis</th><th>Pomen</th></tr></thead><tbody><tr><td>&gt; datoteka</td><td>Standardni izhod gre v datoteko. Prejšnja vsebina se zbriše.</td></tr><tr><td>&gt;&gt; datoteka</td><td>Izhod se doda na konec. Primerno za dnevnike.</td></tr><tr><td>&lt; datoteka</td><td>Standardni vhod pride iz datoteke, ne s tipkovnice.</td></tr><tr><td>ukaz1 | ukaz2</td><td>Izhod prvega ukaza je vhod drugega. Podatki tečejo, ne da bi jih shranili.</td></tr><tr><td>ukaz1 &amp;&amp; ukaz2</td><td>Drugi ukaz steče le, če se je prvi končal uspešno.</td></tr><tr><td>ukaz1 || ukaz2</td><td>Drugi ukaz steče le, če se je prvi končal neuspešno.</td></tr><tr><td>ukaz1 ; ukaz2</td><td>Oba se izvedeta po vrsti, ne glede na uspeh.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>49 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Spremenljivka je ime za niz</h1>
+      <div class="body"><blockquote>V lupini je vrednost niz znakov. Število postane število šele v aritmetičnem kontekstu $(( ... )). Pred imenom ob branju stoji znak $.</blockquote><ul><li>Prireditev je brez presledkov: ime=ana. Presledek bi lupina razumela kot dva ukaza.</li><li>Dvojni narekovaji dovolijo razširitev spremenljivk. Enojni jo ustavijo.</li><li>export ime=vrednost spremenljivko prenese v ukaze, ki jih lupina zažene.</li><li>Okolje, kot je HOME ali EDITOR, pride iz prijavnih datotek, na primer ~/.bashrc.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>50 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Argumenti so oštevilčeni</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>$0</h2><p>Ime, s katerim je bila skripta zagnana.</p></article><article class="card"><h2>$1, $2, …</h2><p>Prvi, drugi in nadaljnji argumenti.</p></article><article class="card"><h2>$#</h2><p>Koliko argumentov je prišlo.</p></article><article class="card"><h2>read</h2><p>Prebere vrstico s standardnega vhoda v spremenljivko.</p></article></div><p class="note">Skripta preimenuj.sh, ki naredi mv &quot;$1&quot; &quot;$2&quot;, je majhen program: vhod sta dve imeni, učinek je premik.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>51 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Pogoj in tri zanke</h1>
+      <div class="body"><div class="split"><article class="card"><h2>if</h2><ul><li>if [ pogoj ]; then … elif … else … fi</li><li>Ukaz [ je test. Presledki ob oklepajih so obvezni.</li><li>-f datoteka: obstaja in je navadna datoteka.</li><li>-d, -e, -w, -x: imenik, obstoj, pisanje, izvajanje.</li><li>-lt, -gt, -eq: številska primerjava.</li></ul></article><article class="card"><h2>for, while, until</h2><ul><li>for ime in seznam; do … done</li><li>Seznam je lahko zapisan ročno ali je izhod ukaza.</li><li>while [ pogoj ]; do … done ponavlja, dokler je pogoj resničen.</li><li>until čaka, da pogoj postane resničen.</li><li>break zapusti zanko. V administraciji ga rabimo, ko je delo opravljeno.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>52 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Ukazi po nalogi, ne po abecedi</h1>
+      <div class="body"><ul><li>Premikanje po drevesu: pwd, ls, cd, find, file.</li><li>Datoteke: cp, mv, rm, mkdir, touch, ln -s.</li><li>Vsebina: cat, less, head, tail, grep, wc, sort.</li><li>Pravice in identiteta: chmod, chown, id, sudo.</li><li>Oddaljeno: ssh, scp. Arhivi: tar, zip.</li><li>Pomoč je del sistema: man ls odpre priročnik tistega ukaza, ki je nameščen.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>53 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Premikanje in datoteke</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">pwd</td><td>Izpiše trenutni imenik.</td></tr><tr><td class="mono">cd /var/log</td><td>Gre v imenik. cd .. gre za eno raven više, cd ~ domov.</td></tr><tr><td class="mono">ls -l</td><td>Dolg izpis. ls -a pokaže tudi skrite datoteke.</td></tr><tr><td class="mono">mkdir -p a/b</td><td>Ustvari imenik. -p ustvari tudi manjkajoče vmesne.</td></tr><tr><td class="mono">touch a.txt</td><td>Ustvari prazno datoteko ali obnovi čas spremembe.</td></tr><tr><td class="mono">cp a.txt b.txt</td><td>Kopira. cp -r mapa kopija kopira imenik.</td></tr><tr><td class="mono">mv a.txt mapa/</td><td>Premakne. mv a.txt b.txt preimenuje.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>54 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Brisanje, tip in povezava</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">rm a.txt</td><td>Zbriše datoteko. rm ne vpraša, če tega ne zahtevamo.</td></tr><tr><td class="mono">rm -r mapa</td><td>Zbriše imenik in vsebino.</td></tr><tr><td class="mono">file a.txt</td><td>Pove, kakšna datoteka je: besedilo, slika, program.</td></tr><tr><td class="mono">ln -s /var/www ~/http</td><td>Simbolna povezava. Izbris povezave ne zbriše cilja.</td></tr><tr><td class="mono">man ls</td><td>Priročnik ukaza, ki je nameščen na tem sistemu.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>55 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Branje vsebine</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">cat a.txt</td><td>Izpiše celo datoteko.</td></tr><tr><td class="mono">less /var/log/syslog</td><td>Bralnik. Presledek lista, q konča.</td></tr><tr><td class="mono">head -n 4 a.txt</td><td>Prve štiri vrstice.</td></tr><tr><td class="mono">tail -n 5 a.txt</td><td>Zadnjih pet vrstic. tail -f sledi rastočemu dnevniku.</td></tr><tr><td class="mono">wc -l a.txt</td><td>Število vrstic. Brez -l še besede in bajte.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>56 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Iskanje</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">grep -n &quot;Ana&quot; a.txt</td><td>Vrstice, ki vsebujejo niz, s številko vrstice.</td></tr><tr><td class="mono">grep -c &quot;Ana&quot; a.txt</td><td>Koliko takih vrstic je.</td></tr><tr><td class="mono">grep -v &quot;Ana&quot; a.txt</td><td>Vrstice, ki niza nimajo.</td></tr><tr><td class="mono">grep -r &quot;Ana&quot; .</td><td>Išče po imeniku in podimenikih.</td></tr><tr><td class="mono">find /var -name &quot;*.log&quot;</td><td>Datoteke po imenu.</td></tr><tr><td class="mono">find . -perm 755</td><td>Datoteke s pravicami 755.</td></tr><tr><td class="mono">find . -size +10M</td><td>Datoteke, večje od 10 megabajtov.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>57 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Urejanje besedila v lupini</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">sort imena.txt</td><td>Uredi vrstice. sort -n uredi števila.</td></tr><tr><td class="mono">sort imena.txt | uniq</td><td>Uredi in odstrani ponovitve, ki stojijo skupaj.</td></tr><tr><td class="mono">tr &quot;[:lower:]&quot; &quot;[:upper:]&quot; &lt; a.txt</td><td>Pretvori male črke v velike.</td></tr><tr><td class="mono">paste a.txt b.txt</td><td>Zlepi datoteki po vrsticah, eno ob drugo.</td></tr><tr><td class="mono">seq 5</td><td>Izpiše 1 2 3 4 5.</td></tr><tr><td class="mono">seq 2 2 10</td><td>Od 2 do 10 s korakom 2.</td></tr><tr><td class="mono">echo &quot;1+1&quot; | bc</td><td>Kalkulator. bc -l zna tudi koren in kotne funkcije.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>58 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Preusmeritev na konkretnem ukazu</h1>
+      <div class="body"><pre>echo &quot;vrstica&quot; &gt; a.txt
+echo &quot;se ena&quot; &gt;&gt; a.txt
+sort a.txt &gt; b.txt
+ps -ef | grep apache
+mkdir mapa &amp;&amp; cd mapa
+cd ni_mape || echo &quot;imenika ni&quot;
+mkdir a; cd a; ls -l</pre><p class="note">Ena puščica prepiše datoteko. Dve dodata. &amp;&amp; steče le po uspehu, || le po neuspehu, podpičje vedno.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>59 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Testi v oglatih oklepajih</h1>
+      <div class="body"><table><thead><tr><th>Test</th><th>Resničen, ko</th></tr></thead><tbody><tr><td class="mono">-e datoteka</td><td>Pot obstaja.</td></tr><tr><td class="mono">-f datoteka</td><td>Je navadna datoteka.</td></tr><tr><td class="mono">-d datoteka</td><td>Je imenik.</td></tr><tr><td class="mono">-r / -w / -x</td><td>Smeš brati, pisati oziroma izvajati.</td></tr><tr><td class="mono">-z &quot;$ime&quot;</td><td>Niz je prazen. -n pomeni, da ni prazen.</td></tr><tr><td class="mono">&quot;$a&quot; = &quot;$b&quot;</td><td>Niza sta enaka. != pomeni, da nista.</td></tr><tr><td class="mono">$n -lt 10</td><td>Število je manjše. Še -le, -eq, -ne, -gt, -ge.</td></tr></tbody></table><p class="note">Presledki ob [ in ] so obvezni. Spremenljivke v narekovajih, da prazen niz ne razbije ukaza.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>60 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Prva skripta</h1>
+      <div class="body"><pre>#!/bin/bash
+# kdo_sem.sh
+whoami
+echo &quot;Pozdravljen&quot;
+printf &quot;\tena\tdva\ttri\n&quot;</pre><p class="note">Zaženeš jo z bash kdo_sem.sh ali, po chmod u+x, z ./kdo_sem.sh. which $SHELL pove, kje je tvoja lupina.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>61 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Branje, argumenti in račun</h1>
+      <div class="body"><pre>#!/bin/bash
+read -p &quot;Ime: &quot; ime
+echo &quot;Pozdravljen, $ime&quot;
+echo &quot;Skripta: $0&quot;
+echo &quot;Argumentov: $#&quot;
+mv &quot;$1&quot; &quot;$2&quot;
+a=1
+b=$((a + 4))
+echo &quot;$b&quot;</pre><p class="note">Zagon z argumenti: ./preimenuj.sh a.txt b.txt. Med imenom in enačajem pri a=1 ni presledka.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>62 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Pogoj na datoteki</h1>
+      <div class="body"><pre>#!/bin/bash
+file=&quot;a.txt&quot;
+if [ -w &quot;$file&quot; ]; then
+  echo &quot;Pisanje je dovoljeno.&quot;
+elif [ -e &quot;$file&quot; ]; then
+  echo &quot;Datoteka obstaja, pisanje ni dovoljeno.&quot;
+else
+  echo &quot;Datoteke ni.&quot;
+fi</pre></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>63 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Zanki for in while</h1>
+      <div class="body"><pre>#!/bin/bash
+count=0
+for file in *; do
+  if [ -f &quot;$file&quot; ]; then
+    count=$((count + 1))
+  fi
+done
+echo &quot;Datotek: $count&quot;
+
+n=1
+while [ &quot;$n&quot; -le 3 ]; do
+  echo &quot;Poskus $n&quot;
+  n=$((n + 1))
+done</pre><p class="note">until dela kot while, le da čaka, da pogoj postane resničen. break zanko zapusti.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>64 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>bash zna več kot sh</h1>
+      <div class="body"><table><thead><tr><th></th><th>bash</th><th>sh</th></tr></thead><tbody><tr><td>Vloga</td><td>Privzeta lupina na večini Linuxov</td><td>Majhna osnova za prenosljive skripte</td></tr><tr><td>Zgodovina ukazov</td><td>Da</td><td>Ne</td></tr><tr><td>Vzdevki</td><td>Da</td><td>Ne</td></tr><tr><td>Začetek skripte</td><td>#!/bin/bash</td><td>#!/bin/sh</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>65 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Arhiv in prenos</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">zip arhiv a.txt b.txt</td><td>Naredi arhiv.zip iz naštetih datotek.</td></tr><tr><td class="mono">unzip arhiv.zip</td><td>Razširi arhiv v trenutni imenik.</td></tr><tr><td class="mono">tar -czf a.tar.gz mapa</td><td>Stisnjen arhiv, običajen na strežniku.</td></tr><tr><td class="mono">tar -xzf a.tar.gz</td><td>Razširi tar.gz.</td></tr><tr><td class="mono">scp a.txt ana@streznik:~/ </td><td>Kopira datoteko na strežnik.</td></tr><tr><td class="mono">scp ana@streznik:~/a.txt .</td><td>Kopira datoteko s strežnika v trenutni imenik.</td></tr><tr><td class="mono">ssh ana@streznik</td><td>Odpre lupino na strežniku.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>66 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">05  ·  Lupina</p>
+      <h1>Še ukazi, ki se pojavijo v vajah</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">echo &quot;VSO&quot;</td><td>Izpiše niz. echo -n ne doda nove vrstice.</td></tr><tr><td class="mono">sleep 5</td><td>Počaka pet sekund.</td></tr><tr><td class="mono">exit</td><td>Konča lupino. logout konča prijavno sejo.</td></tr><tr><td class="mono">sudo ukaz</td><td>Ta ukaz steče s pravicami skrbnika.</td></tr><tr><td class="mono">touch $(seq -f &quot;f%g.txt&quot; 1 5)</td><td>Ustvari f1.txt do f5.txt.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>67 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 06</p>
+          <h1>Procesi</h1>
+          <p class="lead">Kako prepoznamo, kaj teče, in kako to urejeno ustavimo.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>68 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">06  ·  Procesi</p>
+      <h1>Stanja, ki jih izpiše Linux</h1>
+      <div class="body"><table><thead><tr><th>Črka</th><th>Stanje</th><th>Kaj se dogaja</th></tr></thead><tbody><tr><td>R</td><td>Tekoč ali pripravljen</td><td>Bodisi uporablja procesor bodisi samo čaka na rezino.</td></tr><tr><td>S</td><td>Spi</td><td>Čaka na dogodek, ki ga je mogoče prekiniti. Večina strežniških procesov.</td></tr><tr><td>D</td><td>Spi neprekinljivo</td><td>Čaka na disk ali drugo napravo. Kill ga ne prebudi takoj.</td></tr><tr><td>T</td><td>Ustavljen</td><td>Dobil je SIGSTOP ali ga je ustavil razhroščevalnik.</td></tr><tr><td>Z</td><td>Zombi</td><td>Končan je, a starš še ni prebral njegovega izhoda. Pomnilnika skoraj ne zaseda.</td></tr></tbody></table><p class="note">Zombi ni pobegli program. To je evidenca, ki čaka, da jo starševski proces pobere.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>69 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">06  ·  Procesi</p>
+      <h1>Signal je zahteva procesu</h1>
+      <div class="body"><table><thead><tr><th>Signal</th><th>Številka</th><th>Pomen</th></tr></thead><tbody><tr><td>SIGHUP</td><td>1</td><td>Pogosto: demon, ponovno preberi konfiguracijo.</td></tr><tr><td>SIGINT</td><td>2</td><td>Prekinitev s tipkovnice, Ctrl+C.</td></tr><tr><td>SIGTERM</td><td>15</td><td>Prošnja, naj se proces urejeno konča. Privzeti signal ukaza kill.</td></tr><tr><td>SIGKILL</td><td>9</td><td>Takojšnja prekinitev. Proces je ne more ujeti niti prezreti.</td></tr><tr><td>SIGSTOP</td><td>19</td><td>Ustavi izvajanje. Nadaljuje ga SIGCONT.</td></tr></tbody></table><p class="note">Najprej TERM, da proces zapre datoteke in zapiše stanje. KILL je rezerva, ko proces na prošnjo ne odgovori.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>70 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">06  ·  Procesi</p>
+      <h1>Višji nice pomeni manj procesorja</h1>
+      <div class="body"><blockquote>Prijaznost teče od -20 do 19. Privzeta je 0. Večja številka pomeni, da proces bolj popušča drugim. Samo root sme nastaviti negativno vrednost.</blockquote><ul><li>nice -n 10 varnostna-kopija zažene delo, ki naj ne moti strežbe.</li><li>renice spremeni prijaznost procesu, ki že teče.</li><li>To ni omejitev pomnilnika in ni varnostna meja. Je le namig razporejevalniku.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>71 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">06  ·  Procesi</p>
+      <h1>Dva pogleda na iste procese</h1>
+      <div class="body"><div class="split"><article class="card"><h2>ps</h2><ul><li>Posnetek v trenutku, ko ukaz poženemo.</li><li>Vidi se PID, uporabnik, stanje, ukaz.</li><li>ps -ef je cel seznam, primeren za iskanje in skripto.</li><li>Izhod je besedilo, zato ga lahko pošljemo v grep.</li></ul></article><article class="card"><h2>top</h2><ul><li>Slika, ki se osvežuje.</li><li>Zgoraj so poraba procesorja, pomnilnika in povprečje obremenitve.</li><li>Pravi pogled, ko je strežnik počasen in iščemo krivca.</li><li>htop pokaže isto, le da je berljivejši. Ni del osnovnega sistema.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>72 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">06  ·  Procesi</p>
+      <h1>Ukazi za procese</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">ps -ef</td><td>Posnetek vseh procesov: UID, PID, starš, ukaz.</td></tr><tr><td class="mono">ps -ef | grep apache</td><td>Med procesi poišče apache.</td></tr><tr><td class="mono">top</td><td>Osvežujoč pogled. htop je berljivejša različica.</td></tr><tr><td class="mono">kill PID</td><td>Pošlje SIGTERM. Proces se lahko urejeno zapre.</td></tr><tr><td class="mono">kill -9 PID</td><td>Pošlje SIGKILL. Rezerva, ko TERM ne zaleže.</td></tr><tr><td class="mono">kill -HUP PID</td><td>Pogosto pomeni: znova preberi konfiguracijo.</td></tr><tr><td class="mono">nice -n 10 ukaz</td><td>Zažene ukaz prijazneje. renice -n 10 -p PID spremeni tekočega.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>73 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 07</p>
+          <h1>Sistemska administracija</h1>
+          <p class="lead">Skrb za sistem, dokler ga kdo uporablja.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>74 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Administracija je obratovanje</h1>
+      <div class="body"><blockquote>Sistemska administracija je veja računalništva, ki gradi, zaganja, upravlja in vzdržuje računalniške sisteme ter omrežja. Tehnologija je polovica dela. Druga polovica so ljudje, roki in posledice izpada.</blockquote><ul><li>Ista vloga se imenuje skrbnik, administrator ali upravitelj sistemov.</li><li>Skrbnik ni isto kot programer, mora pa brati skripte in konfiguracijo.</li><li>Redno delo, dežurstvo in izredna stanja so trije različni načini iste odgovornosti.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>75 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Strežnik dobi ime po vlogi</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>Datotečni</h2><p>Hrani in deli datoteke.</p></article><article class="card"><h2>Spletni</h2><p>Servira strani in aplikacije.</p></article><article class="card"><h2>Poštni</h2><p>Sprejema in dostavlja pošto.</p></article><article class="card"><h2>Aplikacijski</h2><p>Izvaja poslovno logiko.</p></article><article class="card"><h2>Podatkovni</h2><p>Baza, diskovno polje, arhiv.</p></article><article class="card"><h2>Varnostni kopije</h2><p>Hrani obnovljive kopije drugih sistemov.</p></article><article class="card"><h2>Nadzorni</h2><p>Meritve, alarmi, dnevniki.</p></article><article class="card"><h2>Tiskalniški</h2><p>Deli tiskalnike. Danes redkejša samostojna vloga.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>76 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Dve polovici življenja sistema</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Izgradnja</h2><ul><li>Izbira strojne opreme ali virtualnega stroja.</li><li>Namestitev sistema.</li><li>Integracija v omrežje in v obstoječe storitve.</li><li>Konfiguracija vlog.</li><li>Dokumentacija, brez katere sistem pozna samo avtor.</li></ul></article><article class="card"><h2>Obratovanje</h2><ul><li>Politika uporabe: kdo sme kaj.</li><li>Posodabljanje.</li><li>Upravljanje dostopov.</li><li>Nadzor delovanja, zmogljivosti in varnosti.</li><li>Varnostne kopije in preizkus obnove.</li><li>Poročanje o izpadih in spremembah.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>77 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Posodobitev je postopek, ne ukaz</h1>
+      <div class="body"><div class="cards steps" style="--cols:4"><article class="card"><b>01</b><h2>Načrt</h2><p>Kaj se menja, zakaj, in kaj je združljivo s tem, kar že teče.</p></article><article class="card"><b>02</b><h2>Test</h2><p>Ista sprememba najprej na sistemu, ki ni produkcija.</p></article><article class="card"><b>03</b><h2>Okno</h2><p>Kdaj sme storitev izpasti in kdo je o tem obveščen.</p></article><article class="card"><b>04</b><h2>Produkcija</h2><p>Izvedba, nato opazovanje. Najnovejša različica ni samodejno prava.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>78 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Dostop je evidenca, ne usluga</h1>
+      <div class="body"><ul><li>Račun nastane, se spremeni in se ukine. Ukine se, ko vloga osebe ugasne, ne ko se spomnimo.</li><li>Pravice sledijo politiki, ne osebnemu zaprosilu mimo nje.</li><li>Avtentikacija je geslo, ključ ali certifikat. Geslo, ki ga pozna več ljudi, ni več geslo.</li><li>Del postopka sme prevzeti služba za podporo. Odgovornost za politiko ostane pri skrbniku.</li><li>Na Linuxu so orodja useradd, usermod, userdel, passwd in groupadd le izvedba te evidence.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>79 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Račun, geslo, skupina</h1>
+      <div class="body"><pre>sudo useradd -m -s /bin/bash -c &quot;Ana Novak&quot; ana
+sudo passwd ana
+sudo usermod -aG sudo ana
+sudo userdel ana
+sudo groupadd razvijalci
+sudo groupadd -g 1010 razvijalci
+sudo groupdel razvijalci</pre><p class="note">useradd -m ustvari domači imenik. usermod -aG doda skupino, ne da bi pobrisal prejšnje. userdel -r zbriše tudi dom.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>80 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Nadzor odgovarja na tri vprašanja</h1>
+      <div class="body"><div class="cards" style="--cols:3"><article class="card"><h2>Ali dela</h2><p>Storitev teče, vrata so odprta, zadnji odgovor je bil pravilen.</p></article><article class="card"><h2>Ali zmore</h2><p>Procesor, pomnilnik, disk in omrežje imajo še rezervo.</p></article><article class="card"><h2>Ali je sled</h2><p>Dnevnik pove, kdo je prišel, kaj se je spremenilo in kdaj je nastopila napaka.</p></article></div><p class="note">Orodje je lahko del sistema ali namenjeno. Bistvo je alarm, ko je še čas, in sled, ko je treba razložiti, kaj se je zgodilo.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>81 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Kopija, ki je nismo obnovili, je upanje</h1>
+      <div class="body"><blockquote>Varujemo podatke uporabnikov, programsko opremo, ki je ne moremo znova namestiti iz repozitorija, in konfiguracijo, ki opisuje, kako je sistem sestavljen.</blockquote><ul><li>Lokalna kopija ščiti pred zbrisano datoteko. Ne ščiti pred pogorelim strežnikom.</li><li>Centralna kopija ščiti pred izgubo stroja. Ne ščiti, če je vanjo prišla že pokvarjena vsebina.</li><li>Obnova se preizkusi, preden jo potrebujemo. Načrt, ki obstaja samo na papirju, ob izpadu ne deluje.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>82 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Storitev živi v systemd</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Enota</h2><ul><li>Sodobni Linux zažene storitve prek systemd.</li><li>Enota je opis: kaj zagnati, od česa je odvisno, kako ponovno zagnati ob padcu.</li><li>/etc/init.d je starejši mehanizem. Na Ubuntu je danes večinoma združljivostni ovoj.</li><li>Prvi proces ob zagonu poskrbi, da stečejo ostali.</li></ul></article><article class="card"><h2>Dva različna ukaza</h2><ul><li>start in stop veljata zdaj.</li><li>enable in disable veljata za naslednji zagon.</li><li>Storitev je lahko ustavljena, a še vedno vključena v zagon. In obratno.</li><li>status pove, ali teče in kaj je zadnje zapisala.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>83 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>cron je ura sistema</h1>
+      <div class="body"><blockquote>cron zaganja ukaze po urniku. Tabela crontab ima pet polj časa in nato ukaz: minuta, ura, dan v mesecu, mesec, dan v tednu.</blockquote><ul><li>0 15 26 10 * pomeni 26. oktobra ob 15:00.</li><li>Zvezdica pomeni vsako vrednost tistega polja.</li><li>Ukaz v cronu nima tvojega terminala. Poti morajo biti absolutne, izhod pa zabeležen.</li><li>crontab -l pokaže tabelo, crontab -e jo ureja.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>84 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Požarni zid zapre vse, česar nisi odprl</h1>
+      <div class="body"><ul><li>Privzeto zavrne dohodne povezave, ki jih nihče ni dovolil.</li><li>Odpre se vrata storitve, ki jo strežnik res ponuja: 22 za SSH, 80 in 443 za splet.</li><li>Odprta vrata so del konfiguracije, ne stranski učinek namestitve.</li><li>Na Ubuntu je pogosto orodje ufw. Pravilo je isto tudi tam, kjer je orodje drugo.</li><li>Požarni zid ne popravi šibkega gesla in ne nadomesti posodobitev.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>85 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Štiri diagnoze, preden menjamo konfiguracijo</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>Dosegljivost</h2><p>ping pove, ali gost odgovarja. traceroute in mtr pokažeta, kje na poti se izgublja.</p></article><article class="card"><h2>Procesor in pomnilnik</h2><p>top in prosta količina pomnilnika povesta, ali je stroj siti virov ali program v zanki.</p></article><article class="card"><h2>Disk</h2><p>Poln disk ustavi bazo, pošto in dnevnike, še preden ustavi procesor.</p></article><article class="card"><h2>Čas</h2><p>Razmaknjeni uri pokvarijo dnevnike, cron in veljavnost certifikatov. Čas se usklajuje, ne nastavi enkrat.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>86 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Seja lahko preživi prekinjen SSH</h1>
+      <div class="body"><blockquote>Terminalski multiplekser, kot sta screen in tmux, drži lupino na strežniku tudi potem, ko se povezava pretrga. Dolg posel se ne konča sredi dela, ker je prenosnik zaspal.</blockquote><ul><li>Sejo poimenujemo, da jo naslednjič najdemo.</li><li>Odklop ni konec procesov v seji.</li><li>To je orodje za dolgotrajno delo, ne nadomestilo za storitev, ki mora teči tudi po odjavi. Za to je systemd.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>87 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>systemctl: zdaj in ob zagonu</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">sudo systemctl start cron</td><td>Zažene zdaj.</td></tr><tr><td class="mono">sudo systemctl stop cron</td><td>Ustavi zdaj.</td></tr><tr><td class="mono">sudo systemctl restart cron</td><td>Ustavi in znova zažene.</td></tr><tr><td class="mono">sudo systemctl reload cron</td><td>Znova prebere konfiguracijo, če storitev to zna.</td></tr><tr><td class="mono">sudo systemctl status cron</td><td>Pove, ali teče, in pokaže zadnje vrstice.</td></tr><tr><td class="mono">sudo systemctl enable cron</td><td>Vključi zagon ob naslednjem startu sistema.</td></tr><tr><td class="mono">sudo systemctl disable cron</td><td>Ob naslednjem startu je ne zažene.</td></tr></tbody></table><p class="note">enable ne zažene storitve zdaj. start je ne vključi v naslednji zagon. enable --now naredi oboje.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>88 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Požarni zid ufw</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">sudo ufw status</td><td>Pokaže, ali zid teče in katera vrata so odprta.</td></tr><tr><td class="mono">sudo ufw enable</td><td>Vključi zid. Privzeto zavrne dohodno, česar nisi dovolil.</td></tr><tr><td class="mono">sudo ufw allow 22/tcp</td><td>Dovoli SSH. Brez tega se ob enable lahko zakleneš ven.</td></tr><tr><td class="mono">sudo ufw allow 80/tcp</td><td>Dovoli HTTP.</td></tr><tr><td class="mono">sudo ufw allow 443/tcp</td><td>Dovoli HTTPS.</td></tr><tr><td class="mono">sudo ufw allow OpenSSH</td><td>Isto kot vrata 22, po imenu programa.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>89 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Cron, izklop, ime in vzdevek</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">crontab -l</td><td>Pokaže tvojo tabelo.</td></tr><tr><td class="mono">crontab -e</td><td>Odpre tabelo v urejevalniku.</td></tr><tr><td class="mono">0 15 26 10 * /home/ana/backup.sh</td><td>26. oktobra ob 15:00.</td></tr><tr><td class="mono">sudo shutdown -h now</td><td>Ustavi računalnik. -h +10 ustavi čez deset minut.</td></tr><tr><td class="mono">sudo reboot</td><td>Znova zažene.</td></tr><tr><td class="mono">hostname</td><td>Prebere ime. hostnamectl set-hostname ime ga shrani.</td></tr><tr><td class="mono">alias ll=&quot;ls -l&quot;</td><td>Vzdevek. Da ostane, gre v ~/.bashrc. Za zsh je to ~/.zshrc.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>90 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>Diagnoza, preden menjamo konfiguracijo</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">ping -c 3 streznik</td><td>Ali gost odgovarja. -c omeji število poizvedb.</td></tr><tr><td class="mono">traceroute streznik</td><td>Kje na poti se paketi ustavijo.</td></tr><tr><td class="mono">mtr streznik</td><td>Pot in izguba, osveževano.</td></tr><tr><td class="mono">free -h</td><td>Pomnilnik v berljivih enotah.</td></tr><tr><td class="mono">df -h</td><td>Zasedenost diskov.</td></tr><tr><td class="mono">timedatectl</td><td>Čas, časovni pas in ali teče usklajevanje.</td></tr><tr><td class="mono">sudo timedatectl set-timezone Europe/Ljubljana</td><td>Nastavi pas. Na starejšem Debianu: dpkg-reconfigure tzdata.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>91 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>screen drži sejo po prekinitvi SSH</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">screen -S backup</td><td>Odpre imenovano sejo.</td></tr><tr><td class="mono">Ctrl+a, nato d</td><td>Odklopi sejo. Procesi v njej tečejo naprej.</td></tr><tr><td class="mono">screen -ls</td><td>Našteje seje.</td></tr><tr><td class="mono">screen -r backup</td><td>Vrnemo se v sejo.</td></tr></tbody></table><p class="note">tmux dela isto z drugimi tipkami. Za storitev, ki mora teči tudi po odjavi, je pravi mehanizem systemd, ne screen.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>92 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">07  ·  Administracija</p>
+      <h1>/etc/hosts je lokalni DNS</h1>
+      <div class="body"><pre>127.0.0.1   localhost
+203.0.113.10  ime.si www.ime.si</pre><p class="note">Sistem to datoteko prebere, preden vpraša DNS. Primerna je za laboratorij. Na javnem strežniku ime vpišemo v DNS, ne samo sem.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>93 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 08</p>
+          <h1>Nameščanje programske opreme</h1>
+          <p class="lead">Kako program pride na sistem in kako ga spet odstranimo.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>94 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Program na strežniku ima življenje</h1>
+      <div class="body"><div class="cards" style="--cols:3"><article class="card"><h2>Izid</h2><p>Avtor objavi različico, ki jo je mogoče namestiti.</p></article><article class="card"><h2>Namestitev</h2><p>Na sistem pridejo program, datoteke in odvisnosti.</p></article><article class="card"><h2>Uporaba</h2><p>Storitev teče s konfiguracijo tega strežnika.</p></article><article class="card"><h2>Prilagoditev</h2><p>Skrbnik nastavi vlogo, ne da bi spreminjal program.</p></article><article class="card"><h2>Posodobitev</h2><p>Nova različica zamenja staro. Najprej na testu.</p></article><article class="card"><h2>Odstranitev</h2><p>Program gre stran. Podatki in nastavitve ne izginejo sami od sebe.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>95 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Paket ve, kaj potrebuje</h1>
+      <div class="body"><blockquote>Paket je program, zložen tako, da ga sistem zna namestiti, posodobiti in odstraniti. Repozitorij je skladišče paketov z znanim izvorom. Odvisnost je drugi paket, brez katerega prvi ne deluje.</blockquote><ul><li>APT na Debianu in Ubuntuju sam potegne odvisnosti.</li><li>Seznam virov je v /etc/apt/sources.list in v datotekah pod sources.list.d.</li><li>Na Red Hatu isto vlogo igrata dnf in yum. Na Windowsu namestitveni paketi exe in msi.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>96 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Štirje ukazi APT, ki niso sopomenke</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th><th>Ne naredi</th></tr></thead><tbody><tr><td>apt update</td><td>Osveži seznam, kaj v repozitorijih obstaja.</td><td>Ne namesti ničesar.</td></tr><tr><td>apt upgrade</td><td>Namesti novejše različice že nameščenih paketov.</td><td>Ne odstranjuje paketov, da bi razrešil spor.</td></tr><tr><td>apt full-upgrade</td><td>Nadgradi tudi tako, da sme odstraniti paket, če nova različica to terja.</td><td>Ni ukaz za vsak dan na produkciji.</td></tr><tr><td>apt install</td><td>Namesti paket in njegove odvisnosti.</td><td>Brez prejšnjega update lahko vidi star seznam.</td></tr></tbody></table><p class="note">apt je vmesnik, ki ga uporabljamo. apt-get ostaja in dela isto jedro. V novih navodilih pišemo apt.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>97 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Odstraniti program ni isto kot pozabiti nastavitve</h1>
+      <div class="body"><div class="split"><article class="card"><h2>remove</h2><ul><li>Odstrani program.</li><li>Konfiguracijo v /etc pusti.</li><li>Ponovna namestitev pobere stare nastavitve.</li><li>Prava izbira, če želimo program začasno umakniti.</li></ul></article><article class="card"><h2>purge in clean</h2><ul><li>purge odstrani tudi konfiguracijske datoteke paketa.</li><li>Ne briše podatkov, ki jih je ustvaril uporabnik, na primer baz.</li><li>apt clean pobriše prenesene pakete iz predpomnilnika.</li><li>autoclean pobriše le pakete, ki niso več na voljo.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>98 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Štirje žepi repozitorija Ubuntu</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>main</h2><p>Prosta programska oprema, ki jo podpira izdajatelj distribucije.</p></article><article class="card"><h2>universe</h2><p>Prosta programska oprema, ki jo vzdržuje skupnost. Podpora je šibkejša.</p></article><article class="card"><h2>restricted</h2><p>Lastniški gonilniki, kjer odprta koda strojne opreme ne poganja.</p></article><article class="card"><h2>multiverse</h2><p>Programska oprema z pravnimi omejitvami. Na strežnik je ne damo brez preverjanja licence.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>99 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>PPA je tuje skladišče</h1>
+      <div class="body"><blockquote>Osebni arhiv paketov omogoča različico, ki je v uradnem repozitoriju še ni. S tem skrbnik zaupa gradnje paketov nekomu, ki ni izdajatelj distribucije.</blockquote><ul><li>Za vsakim PPA stoji vprašanje: kdo pakete podpisuje in kako dolgo jih bo vzdrževal.</li><li>Po dodajanju vira je spet potreben apt update, sicer sistem novega skladišča ne vidi.</li><li>Na produkciji je uradni repozitorij privzeta izbira. PPA je izjema z znanim razlogom.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>100 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Izvorna koda je pot, ko paketa ni</h1>
+      <div class="body"><ul><li>build-essential prinese prevajalnik in orodja, brez katerih prevod ne steče.</li><li>Običajen korak je: razširi arhiv, configure, make, make install.</li><li>Makefile opisuje, kaj je od česa odvisno in s kakšnim ukazom nastane program.</li><li>Tako nameščen program paketni sistem ne pozna. Posodobitev in odstranitev sta stvar avtorja Makefile, če ju je sploh predvidel.</li><li>Zato je paket boljša pot, kadar obstaja.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>101 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Ostali ukazi APT</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">sudo apt remove paket</td><td>Odstrani program, nastavitve v /etc pusti.</td></tr><tr><td class="mono">sudo apt purge paket</td><td>Odstrani tudi nastavitve paketa. Podatkov baze ne.</td></tr><tr><td class="mono">sudo apt autoremove</td><td>Odstrani odvisnosti, ki jih ne rabi nihče več.</td></tr><tr><td class="mono">sudo apt clean</td><td>Pobriše prenesene pakete iz predpomnilnika.</td></tr><tr><td class="mono">sudo apt autoclean</td><td>Pobriše le pakete, ki jih repozitorij ne ponuja več.</td></tr><tr><td class="mono">sudo apt -f install</td><td>Poskusi popraviti polomljene odvisnosti.</td></tr><tr><td class="mono">apt-cache search php</td><td>Poišče paket, ko ne veš točnega imena.</td></tr><tr><td class="mono">dpkg -l | grep php</td><td>Pokaže, kaj od tega je že nameščeno.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>102 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Vir in prevod, ko paketa ni</h1>
+      <div class="body"><pre>echo 'deb https://zgled.si stable main' | sudo tee -a /etc/apt/sources.list
+sudo add-apt-repository ppa:zgled/ppa
+sudo apt update
+sudo apt install build-essential gcc g++
+tar -xzf program.tar.gz
+cd program
+./configure
+make
+sudo make install</pre><p class="note">Po make install paketni sistem programa ne pozna. Odstranitev je make uninstall, če jo Makefile sploh ima. PPA pomeni, da zaupamo gradnjam nekoga drugega.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>103 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">08  ·  Nameščanje</p>
+      <h1>Tri enote, v katerih program teče</h1>
+      <div class="body"><table><thead><tr><th>Enota</th><th>Kaj deli z gostiteljem</th><th>Kdaj</th></tr></thead><tbody><tr><td>Paket na sistemu</td><td>Jedro, knjižnice in konfiguracijo stroja.</td><td>Ena storitev na enem strežniku.</td></tr><tr><td>Virtualni stroj</td><td>Samo strojno opremo, prek hipervizorja. Ima svoje jedro.</td><td>Ko gost potrebuje svoj operacijski sistem.</td></tr><tr><td>Kontejner</td><td>Jedro gostitelja. Ločeni so procesi, datoteke in omrežje.</td><td>Ko hočemo ponovljivo aplikacijo brez celega sistema.</td></tr></tbody></table><p class="note">Slika kontejnerja je predloga. Vsebnik je tekoči primerek. Lažji je od virtualnega stroja prav zato, ker nima lastnega jedra, in zato tudi šibkeje ločen.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>104 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 09</p>
+          <h1>Omrežne in spletne storitve</h1>
+          <p class="lead">Kako ime, vrata in protokol pripeljejo zahtevo do programa.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>105 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Protokol je dogovor o sporočilih</h1>
+      <div class="body"><blockquote>Protokol je formalen opis pravil, po katerih si sistema izmenjujeta sporočila. Brez skupnega dogovora povezava ne pomeni, da se razumeta.</blockquote><ul><li>Ime protokola pove, kakšna sporočila obstajajo in v kakšnem vrstnem redu.</li><li>Vrata povedo, kateri program na gostitelju sporočilo prejme.</li><li>Isti strežnik lahko hkrati govori več protokolov. Vsak posluša na svojih vratih.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>106 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Protokoli, ki jih skrbnik loči</h1>
+      <div class="body"><table><thead><tr><th>Protokol</th><th>Vloga</th></tr></thead><tbody><tr><td>DNS</td><td>Prevede ime v naslov. Brez njega brskalnik ne ve, kam naj se poveže.</td></tr><tr><td>HTTP</td><td>Zahteva in odgovor spletne vsebine. Sam po sebi ni šifriran.</td></tr><tr><td>HTTPS</td><td>HTTP znotraj TLS. Vsebina in identiteta strežnika sta zaščiteni.</td></tr><tr><td>SSH</td><td>Šifrirana oddaljena lupina in prenos datotek.</td></tr><tr><td>SMTP</td><td>Oddaja in prenos pošte med strežniki.</td></tr><tr><td>IMAP</td><td>Branje pošte, ki ostane na strežniku.</td></tr><tr><td>POP3</td><td>Prenos pošte na odjemalca. Na strežniku je po prenosu pogosto ni več.</td></tr><tr><td>FTP</td><td>Prenos datotek brez šifriranja. Na javnem omrežju ga nadomestita SFTP ali FTPS.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>107 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Kaj dela spletni strežnik</h1>
+      <div class="body"><ul><li>Vrača datoteke: HTML, sloge, skripte, slike.</li><li>Hkrati streže več odjemalcem.</li><li>Po imenu v zahtevi izbere pravo spletno mesto.</li><li>Zažene program, ki sestavi dinamičen odgovor.</li><li>Zapiše dostop in napako, vrne šifro napake, ko zahteve ne more izpolniti.</li><li>Stisne odgovor in dovoli brskalniku, da statično vsebino obdrži v predpomnilniku.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>108 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Pot od imena do strani</h1>
+      <div class="body"><div class="cards steps" style="--cols:4"><article class="card"><b>01</b><h2>DNS</h2><p>Zapis A poveže ime z IPv4. AAAA ga poveže z IPv6.</p></article><article class="card"><b>02</b><h2>Povezava</h2><p>Brskalnik odpre vrata 443, ali 80, če šifriranja ni.</p></article><article class="card"><b>03</b><h2>Ime v zahtevi</h2><p>Glava Host in pri TLS tudi SNI povesta, katero ime je uporabnik zahteval.</p></article><article class="card"><b>04</b><h2>Vsebina</h2><p>Virtualni gostitelj pokaže na svoj DocumentRoot in svoje dnevnike.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>109 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Virtualni gostitelj je spletno mesto</h1>
+      <div class="body"><blockquote>En Apache lahko servira več domen. Vsaka ima svoje ime, svoj imenik z datotekami in svoj dnevnik. Konfiguracija, ki je pripravljena, še ni konfiguracija, ki jo strežnik bere.</blockquote><ul><li>sites-available hrani pripravljene definicije.</li><li>sites-enabled hrani tiste, ki so vključene. Običajno so to povezave na prve.</li><li>Isto velja za module: na voljo ni isto kot vključeno.</li><li>Pred ponovnim zagonom se konfiguracija preveri. Pokvarjena datoteka sicer ugasne strežbo.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>110 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Apache: namestitev in stanje</h1>
+      <div class="body"><table><thead><tr><th>Ukaz</th><th>Naredi</th></tr></thead><tbody><tr><td class="mono">sudo apt install apache2</td><td>Namesti spletni strežnik.</td></tr><tr><td class="mono">sudo ufw allow &quot;Apache&quot;</td><td>Odpre vrata, ki jih profil Apache potrebuje.</td></tr><tr><td class="mono">sudo systemctl enable --now apache2</td><td>Zažene ga in ga vključi v zagon.</td></tr><tr><td class="mono">sudo systemctl reload apache2</td><td>Znova prebere konfiguracijo brez prekinitve strežbe.</td></tr><tr><td class="mono">sudo apache2ctl configtest</td><td>Preveri skladnjo, preden reloadamo.</td></tr><tr><td class="mono">sudo a2ensite ime.conf</td><td>Vključi stran iz sites-available.</td></tr><tr><td class="mono">sudo a2dissite 000-default.conf</td><td>Izključi privzeto stran.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>111 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Kje Apache hrani stvari</h1>
+      <div class="body"><table><thead><tr><th>Pot</th><th>Vsebina</th></tr></thead><tbody><tr><td class="mono">/etc/apache2/apache2.conf</td><td>Glavna konfiguracija.</td></tr><tr><td class="mono">/etc/apache2/ports.conf</td><td>Vrata. Privzeto 80 in, ob SSL, 443.</td></tr><tr><td class="mono">/etc/apache2/sites-available</td><td>Pripravljene strani.</td></tr><tr><td class="mono">/etc/apache2/sites-enabled</td><td>Strani, ki jih strežnik bere.</td></tr><tr><td class="mono">/etc/apache2/mods-available</td><td>Moduli, ki so na voljo. mods-enabled so vključeni.</td></tr><tr><td class="mono">/var/www/ime</td><td>Datoteke strani.</td></tr><tr><td class="mono">/var/log/apache2/access.log</td><td>Vsaka zahteva. error.log hrani napake.</td></tr></tbody></table></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>112 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Virtualni gostitelj</h1>
+      <div class="body"><pre>sudo mkdir -p /var/www/ime
+sudo chown -R www-data:www-data /var/www/ime
+# /etc/apache2/sites-available/ime.conf
+&lt;VirtualHost *:80&gt;
+    ServerName ime.si
+    ServerAlias www.ime.si
+    DocumentRoot /var/www/ime
+    ErrorLog ${APACHE_LOG_DIR}/ime-error.log
+    CustomLog ${APACHE_LOG_DIR}/ime-access.log combined
+&lt;/VirtualHost&gt;</pre><p class="note">Ime v DNS in ServerName morata kazati na isti strežnik. HTTPS doda še certifikat in vrata 443. SNI pove, katero ime je odjemalec zahteval.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>113 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>LAMP so štiri plasti, ne en program</h1>
+      <div class="body"><div class="cards" style="--cols:4"><article class="card"><h2>Linux</h2><p>Operacijski sistem. Daje procese, datoteke, pravice in omrežje.</p></article><article class="card"><h2>Apache</h2><p>Spletni strežnik. Sprejme HTTP in vrne odgovor. Nginx je druga izbira, sklad se potem imenuje LEMP.</p></article><article class="card"><h2>MySQL ali MariaDB</h2><p>Relacijska baza. Podatki so v tabelah. phpMyAdmin je le spletni odjemalec, ne baza.</p></article><article class="card"><h2>PHP</h2><p>Jezik, ki na strežniku sestavi stran. Ni spletni strežnik. Teče kot modul ali kot proces za njim.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>114 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Baza in PHP na istem strežniku</h1>
+      <div class="body"><pre>sudo apt install mysql-server
+sudo mysql_secure_installation
+sudo mysql
+SHOW DATABASES;
+CREATE DATABASE test;
+USE test;
+SHOW TABLES;
+DESCRIBE tabela;
+
+sudo apt install php libapache2-mod-php php-mysql
+php -v
+sudo systemctl reload apache2</pre><p class="note">phpMyAdmin je spletni odjemalec za isto bazo, paket phpmyadmin. Ni nadomestilo za mysql. Na Ubuntuju je M v skladu pogosto MariaDB, ukazi odjemalca ostanejo.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>115 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Kako teče zahteva skozi LAMP</h1>
+      <div class="body"><ul><li>Brskalnik pošlje HTTP na Apache.</li><li>Apache po imenu izbere virtualnega gostitelja in DocumentRoot.</li><li>Če je stran PHP, jo odda interpreterju. PHP ni spletni strežnik.</li><li>PHP vpraša bazo in iz rezultata sestavi HTML.</li><li>Apache ta HTML vrne brskalniku. Vmes zapiše access.log ali error.log.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>116 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Trinivojska arhitektura</h1>
+      <div class="body"><div class="cards steps" style="--cols:4"><article class="card"><b>01</b><h2>Predstavitev</h2><p>Kar vidi uporabnik. Brskalnik, HTML, obrazec.</p></article><article class="card"><b>02</b><h2>Aplikacija</h2><p>Pravila: kdo sme, kaj stane, kaj se zgodi ob naročilu. Na LAMP je to PHP.</p></article><article class="card"><b>03</b><h2>Podatki</h2><p>Baza. Preživi ponovni zagon aplikacije in ima svojo varnostno kopijo.</p></article><article class="card"><b>04</b><h2>Ločitev</h2><p>Nivoji so lahko na enem stroju ali na treh. Ločitev je v odgovornosti, ne nujno v omarah.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>117 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Aktivni in pasivni FTP</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Aktivni</h2><ul><li>Odjemalec odpre ukazno povezavo na vrata 21.</li><li>Podatkovno povezavo odpre strežnik nazaj proti odjemalcu.</li><li>Požarni zid pri odjemalcu to drugo povezavo pogosto zavrne.</li></ul></article><article class="card"><h2>Pasivni</h2><ul><li>Tudi podatkovno povezavo odpre odjemalec.</li><li>Strežnik pove, na katerih vratih naj jo odpre.</li><li>Zato mora požarni zid strežnika dovoliti razpon teh vrat.</li><li>Vsebina in geslo pri navadnem FTP še vedno potujeta odprto.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>118 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>FTP: namestitev in uporabnik</h1>
+      <div class="body"><pre>sudo apt install vsftpd
+sudo systemctl enable --now vsftpd
+sudo ufw allow 21/tcp
+sudo ufw allow 5000:5500/tcp
+sudo adduser ftpana</pre><p class="note">V /etc/ssh/sshd_config dodamo DenyUsers ftpana, da ta račun nima lupine. Na javnem omrežju je namesto FTP boljši SFTP.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>119 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>FTP: konfiguracija vsftpd</h1>
+      <div class="body"><pre># /etc/vsftpd.conf
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+chroot_local_user=YES
+pasv_min_port=5000
+pasv_max_port=5500</pre><p class="note">Anonimni dostop je izklopljen. Uporabnik je zaprt v svoj imenik. Pasivna vrata morajo biti odprta tudi na požarnem zidu.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>120 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Trije oddaljeni dostopi, trije nameni</h1>
+      <div class="body"><div class="cards" style="--cols:3"><article class="card"><h2>SSH</h2><p>Šifrirana lupina. Prijava z geslom ali, bolje, s ključem. Osnova za scp in SFTP.</p></article><article class="card"><h2>SFTP</h2><p>Prenos datotek po SSH. Ena vrata, šifriranje, pravice uporabnika na sistemu.</p></article><article class="card"><h2>HTTPS</h2><p>Splet za ljudi in za aplikacije. Certifikat poveže ime domene z javnim ključem strežnika.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>121 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Certifikat je podpisano ime</h1>
+      <div class="body"><blockquote>Infrastruktura javnih ključev poveže ime s parom ključev. Overitelj podpiše certifikat. Brskalnik preveri verigo podpisov in ali se ime v certifikatu ujema z imenom, ki ga je uporabnik zahteval.</blockquote><ul><li>Zasebni ključ ostane na strežniku. Javni ključ potuje v certifikatu.</li><li>Potekel certifikat naredi storitev nedosegljivo za urejenega odjemalca, čeprav program še teče.</li><li>Šifriranje ne popravi napake v aplikaciji. Popravi prisluškovanje in zamenjavo strežnika na poti.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>122 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">09  ·  Storitve</p>
+      <h1>Vrstni red, ki drži storitev pokonci</h1>
+      <div class="body"><ul><li>Najprej sistemska posodobitev in usklajen čas, šele nato javna objava.</li><li>Storitev posluša samo na vratih, ki jih potrebuje. Ostalo požarni zid zapre.</li><li>Skrbnik vstopa prek SSH s ključem. Geslo roota se po omrežju ne uporablja.</li><li>Vsebina strani, dnevnik in baza so trije različni podatki in tri kopije.</li><li>Konfiguracija je zapisana. Spremembo, ki živi samo v glavi, naslednji izpad zbriše.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>123 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 10</p>
+          <h1>Gostovanje in virtualizacija</h1>
+          <p class="lead">Čigav je stroj, čigav je sistem in kdo ga sme spreminjati.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>124 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">10  ·  Gostovanje</p>
+      <h1>Pet načinov, kako stran pride na internet</h1>
+      <div class="body"><table><thead><tr><th>Model</th><th>Kaj je tvoje</th><th>Kaj deliš</th><th>Primerno</th></tr></thead><tbody><tr><td>Deljeno</td><td>Datoteke strani</td><td>Sistem in vire z drugimi strankami</td><td>Majhna stran, malo prometa</td></tr><tr><td>VPS</td><td>Sistem v dodeljenih mejah</td><td>Fizični strežnik</td><td>Aplikacija, ki potrebuje svoj OS</td></tr><tr><td>Namenski</td><td>Ves fizični strežnik</td><td>Omrežje ponudnika</td><td>Visok promet, posebna strojna oprema</td></tr><tr><td>Kolokacija</td><td>Svoj stroj</td><td>Prostor, elektriko, povezavo</td><td>Ko opremo kupiš sam</td></tr><tr><td>Oblak</td><td>Sisteme, ki jih ustvariš prek vmesnika</td><td>Platformo ponudnika</td><td>Obremenitev, ki se spreminja</td></tr></tbody></table><p class="note">VPS nima neomejenih virov. Ima dodeljen procesor, pomnilnik in disk. Sosed njega ne vidi, fizični stroj pa si še vedno delita.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>125 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">10  ·  Gostovanje</p>
+      <h1>Oblak je tri globine odgovornosti</h1>
+      <div class="body"><div class="cards" style="--cols:3"><article class="card"><h2>IaaS</h2><p>Dobite virtualni stroj, omrežje in disk. Sistem, popravke in aplikacijo vzdržujete sami.</p></article><article class="card"><h2>PaaS</h2><p>Dobite okolje za zagon aplikacije. Operacijski sistem vzdržuje ponudnik, kodo prinesete vi.</p></article><article class="card"><h2>SaaS</h2><p>Dobite končno storitev. Pošta, pisarna, CRM. Ne nameščate ne sistema ne aplikacije.</p></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>126 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">10  ·  Gostovanje</p>
+      <h1>Nov virtualni stroj ima šest odločitev</h1>
+      <div class="body"><ul><li>Slika: dolgoročno podprta izdaja, na primer Ubuntu LTS, ali lastna slika ISO.</li><li>Procesor: koliko jeder. Več jeder pomaga le programu, ki zna delati vzporedno.</li><li>Pomnilnik in disk: baza poje oboje, statična stran malo.</li><li>Omrežje: naslov IPv4 ali IPv6 in katera vrata požarni zid sploh odpre.</li><li>Ime gostitelja: edinstveno v omrežju, berljivo v dnevnikih.</li><li>Dostop: ključ SSH, ne geslo, ki ga pošljemo po pošti.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>127 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">10  ·  Gostovanje</p>
+      <h1>Virtualizacija naredi več računalnikov iz enega</h1>
+      <div class="body"><blockquote>Virtualizacija ustvari navidezno različico računalnika, diska, omrežja ali izvajalnega okolja. Hipervizor deli fizične vire med goste in jim daje vtis, da imajo stroj zase.</blockquote><ul><li>Hipervizor tipa 1 teče neposredno na strojni opremi. Taki so KVM, ESXi in Hyper-V.</li><li>Hipervizor tipa 2 teče kot program na obstoječem sistemu. Tak je VirtualBox.</li><li>Gost ima svoje jedro, svoje procese in svoj izpad. Ponovni zagon gostitelja pa odnese vse goste.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>128 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">10  ·  Gostovanje</p>
+      <h1>Štiri vrste virtualizacije</h1>
+      <div class="body"><table><thead><tr><th>Vrsta</th><th>Ideja</th></tr></thead><tbody><tr><td>Polna</td><td>Gost teče kot na pravi strojni opremi. Njegovega sistema ni treba prilagajati.</td></tr><tr><td>Strojno podprta</td><td>Procesor (VT-x ali AMD-V) prevzame občutljive ukaze. Polna virtualizacija je zaradi tega praktična.</td></tr><tr><td>Paravirtualizacija</td><td>Gost ve za hipervizor in ga kliče neposredno. Sistem gosta je prilagojen.</td></tr><tr><td>Kontejnerji</td><td>Gosti delijo jedro. Ločeni so procesi, datotečni sistem in omrežje. To ni svoj operacijski sistem.</td></tr></tbody></table><p class="note">VLAN je virtualizacija omrežja, ne sistema: več logičnih omrežij na isti fizični opremi.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>129 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">10  ·  Gostovanje</p>
+      <h1>Nadzorna plošča je vmesnik za ponavljajoče delo</h1>
+      <div class="body"><table><thead><tr><th>Orodje</th><th>Namen</th><th>Model</th></tr></thead><tbody><tr><td>Webmin</td><td>Splošna administracija sistema prek brskalnika.</td><td>Odprt</td></tr><tr><td>Virtualmin</td><td>Spletna mesta, pošta in baze na enem strežniku.</td><td>Odprt</td></tr><tr><td>ISPConfig</td><td>Plošča za gostovanje več strank.</td><td>Odprt</td></tr><tr><td>cPanel in WHM</td><td>Množično gostovanje. WHM je plošča ponudnika, cPanel plošča stranke.</td><td>Plačljiv</td></tr><tr><td>WHMCS</td><td>Ni plošča strežnika. Obračun, naročnine in podpora ponudnika gostovanja.</td><td>Plačljiv</td></tr></tbody></table><p class="note">Plošča ne nadomesti razumevanja sistema. Zapiše iste datoteke, ki bi jih sicer uredili v lupini. Ko se plošča in ročni popravek spreta, zmaga tisti, ki je pisal zadnji.</p></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>130 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 11</p>
+          <h1>Splet in vsebine</h1>
+          <p class="lead">Kaj se je na spletu menjalo in kaj od tega je tehnologija.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>131 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">11  ·  Splet</p>
+      <h1>Dve generaciji, ki imata jasno mejo</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Splet dokumentov</h2><ul><li>Stran je objavljena. Bralec jo bere.</li><li>Vsebina se menja, ko jo zamenja avtor na strežniku.</li><li>Malo interakcije, malo računov, malo soustvarjanja.</li><li>Tehnično: statične datoteke in zgodnji dinamični strežniki.</li></ul></article><article class="card"><h2>Splet soustvarjanja</h2><ul><li>Bralec piše: komentar, objavo, sliko, oceno.</li><li>Platforma hrani vsebino mnogih in jo pokaže drugim.</li><li>Meja med avtorjem in občinstvom na isti strani pade.</li><li>Tehnično: računi, baze, seje, piškotki, API.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>132 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">11  ·  Splet</p>
+      <h1>Semantični splet ni isto kot priporočila</h1>
+      <div class="body"><blockquote>Semantični splet hoče, da so podatki na voljo tudi stroju: s pomenom, ne le s postavitvijo na strani. Orodja so povezani podatki ter jeziki, kot so RDF, OWL in SKOS.</blockquote><ul><li>Priporočilni sistem, ki ugiba film iz zgodovine gledanja, je druga naloga. Uporablja podatke in modele, ne semantičnega opisa strani.</li><li>Web3 v pomenu verig blokov in denarnic je spet druga zgodba. Ime si deli, tehnologije ne.</li><li>Četrta in peta generacija nimata enotnega standarda. Ime pove smer v literaturi, ne protokol.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>133 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">11  ·  Splet</p>
+      <h1>Oznaki, ki nimata standarda</h1>
+      <div class="body"><div class="split"><article class="card"><h2>Četrta generacija</h2><ul><li>V literaturi: inteligentnejši in bolj prilagojen splet.</li><li>Navajajo umetno inteligenco, velike podatke in pogovorne vmesnike.</li><li>To je opis smeri, ne protokol in ne različica HTTP.</li></ul></article><article class="card"><h2>Peta generacija</h2><ul><li>V literaturi: poglobljeni ali čustveni splet.</li><li>Enotnega tehničnega pomena nima.</li><li>Na zagovoru zadošča, da ločiš dokument, soustvarjanje in semantične podatke.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>134 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">11  ·  Splet</p>
+      <h1>Vsebina in stranka nista ista evidenca</h1>
+      <div class="body"><div class="split"><article class="card"><h2>CMS</h2><ul><li>Sistem za upravljanje vsebin.</li><li>Urednik objavi stran, ne da bi menjal konfiguracijo strežnika.</li><li>Loči besedilo od predloge, v kateri se besedilo pokaže.</li><li>Teče na spletnem strežniku in običajno v bazi.</li><li>Primer: WordPress.</li></ul></article><article class="card"><h2>CRM in CCM</h2><ul><li>CRM vodi odnos s stranko: stik, ponudba, zgodovina.</li><li>CCM vodi sporočila, ki jih organizacija stranki pošilja.</li><li>Oba stojita na strežniku, nista pa strežniška vloga sama po sebi.</li><li>Skrbnik zagotovi sistem, bazo, kopije in dostop.</li><li>Vsebino in kampanje ureja nekdo drug.</li></ul></article></div></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>135 / 139</span></footer>
+    </section><section class="slide navy">
+          <p class="kicker">Modul 12</p>
+          <h1>Sklep</h1>
+          <p class="lead">Na zagovoru se pokažeta ukaz in razlaga, v projektu pa delujoča storitev.</p>
+          <footer><span>Strežniški sistemi · teorija</span><span>136 / 139</span></footer>
+        </section><section class="slide paper">
+      <p class="kicker">12  ·  Sklep</p>
+      <h1>Študent zna razložiti</h1>
+      <div class="body"><ul><li>Razliko med sistemsko in uporabniško programsko opremo ter med modeli licenc.</li><li>Naloge operacijskega sistema, stanja procesa in vlogo datotečnega sistema.</li><li>Zakaj ima imenik drugačen pomen pravic kot datoteka in kaj pomeni chmod 644.</li><li>Zakaj sudo ni isto kot prijava kot root.</li><li>Kaj naredita preusmeritev in cev, in zakaj je v cronu pot absolutna.</li><li>Razliko med TERM in KILL ter med apt update in apt upgrade.</li><li>Pot zahteve od imena domene do virtualnega gostitelja.</li><li>Kdaj je pravi VPS, kdaj kontejner in kdaj svoj fizični strežnik.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>137 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">12  ·  Sklep</p>
+      <h1>Kam po preverljiv vir</h1>
+      <div class="body"><ul><li>man je priročnik ukaza, ki je nameščen na tem sistemu. To je prvi vir.</li><li>Dokumentacija distribucije, Apache, PHP in baze je vir za projektno nalogo.</li><li>Zapisek v /etc pove, kako je sestavljen ta strežnik. Brez njega je sistem ustno izročilo.</li><li>Klepetalni model pomaga pri razlagi. Njegov odgovor ni vir, dokler ga ne preverimo v dokumentaciji.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>138 / 139</span></footer>
+    </section><section class="slide paper">
+      <p class="kicker">12  ·  Sklep</p>
+      <h1>Štirje zagovori in projekt</h1>
+      <div class="body"><blockquote>Osem vaj se zagovarja v štirih parih. Vsak zagovor pokriva dve vaji. Projekt je šestdeset odstotkov ocene.</blockquote><ul><li>Na zagovoru študent pokaže ukaz in pove, zakaj je ta ukaz pravilen.</li><li>Ukaz brez razlage ne zdrži. Razlaga brez sistema, na katerem jo pokažemo, tudi ne.</li><li>Projekt drži teorijo v poglavju in delujočo storitev na zagovoru naloge.</li></ul></div>
+      <footer><span>Strežniški sistemi · teorija</span><span>139 / 139</span></footer>
+    </section>
+<div class="controls">
+  <button type="button" id="prev">Nazaj</button>
+  <button type="button" id="next">Naprej</button>
+</div>
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+const progress = document.getElementById("progress");
+let index = 0;
+function show(next) {
+  index = Math.max(0, Math.min(slides.length - 1, next));
+  slides.forEach((slide, i) => slide.classList.toggle("active", i === index));
+  progress.style.width = ((index + 1) / slides.length * 100) + "%";
+  history.replaceState(null, "", "#" + (index + 1));
+}
+document.getElementById("next").addEventListener("click", () => show(index + 1));
+document.getElementById("prev").addEventListener("click", () => show(index - 1));
+document.addEventListener("keydown", (event) => {
+  if (["ArrowRight", "PageDown", " "].includes(event.key)) { event.preventDefault(); show(index + 1); }
+  if (["ArrowLeft", "PageUp", "Backspace"].includes(event.key)) { event.preventDefault(); show(index - 1); }
+  if (event.key === "Home") show(0);
+  if (event.key === "End") show(slides.length - 1);
+});
+function fromHash() {
+  const start = parseInt(location.hash.slice(1), 10);
+  if (Number.isFinite(start)) show(start - 1);
+}
+const start = parseInt(location.hash.slice(1), 10);
+show(Number.isFinite(start) ? start - 1 : 0);
+window.addEventListener("hashchange", fromHash);
+</script>
+</body>
+</html>
